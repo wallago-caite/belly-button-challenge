@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Bellybutton Biodiversity</title>
+  <!-- Slate Theme from Bootswatch -->
+  <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/slate/bootstrap.min.css" rel="stylesheet" integrity="sha384-QXpMNZZ3FgSM2/Eh5eW7bALs0M/JrQm/+VfG/WI6wxCZPHbxI+inX+qDiZdyN5H2" crossorigin="anonymous">
+  <style>
+    /* Ensure the graph containers fill the card's width */
+    #bar, #bubble {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Ensure the cards have sufficient height */
+    .card-body {
+      min-height: 300px;
+    }
+
+    /* Full-width card for the bubble chart */
+    .full-width-card {
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Demographic Data Card with Dropdown in 3 columns on the Left -->
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">Test Subject ID Number</h4>
+          </div>
+          <div class="card-body">
+            <select id="selDataset" class="form-select mb-3" onchange="optionChanged(this.value)">
+              <!-- Dropdown options will be populated here -->
+            </select>
+            <h4>Demographic Info</h4>
+            <div id="sample-metadata">
+              <!-- Demographic data will be displayed here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar Graph Card in 5 columns to the right -->
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">Bar Graph</h4>
+          </div>
+          <div id="bar" class="card-body">
+            <!-- Bar graph will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bubble Chart Card spanning columns 2-7 -->
+    <div class="row mt-4 justify-content-center">
+      <div class="col-md-6 offset-md-1">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">Bubble Chart</h4>
+          </div>
+          <div id="bubble" class="card-body">
+            <!-- Bubble chart will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="./static/js/app.js"></script>
+  <script>
+    function buildCharts(sample) {
+      d3.json("https://static.bc-edx.com/data/dl-1-2/m14/lms/starter/samples.json").then((data) => {
+        var samples = data.samples;
+        var resultArray = samples.filter(x => x.id == sample);
+        var result = resultArray[0];
+
+        var otu_ids = result.otu_ids;
+        var otu_labels = result.otu_labels;
+        var sample_values = result.sample_values;
+
+        // Bubble Chart
+        var bubbleTrace = [{
+          x: otu_ids,
+          y: sample_values,
+          text: otu_labels,
+          mode: 'markers',
+          marker: {
+            size: sample_values,
+            color: otu_ids,
+            colorscale: 'Autumn'
+          }
+        }];
+        var bubbleLayout = {
+          title: 'Bacteria Per Sample',
+          showlegend: false,
+          xaxis: { title: 'OTU ID' },
+          hovermode: 'closest',
+          responsive: true,   // Ensures the chart is responsive
+          paper_bgcolor: '#2c3e50',
+          plot_bgcolor: '#34495e',
+          font: { color: '#ecf0f1' }
+        };
+        Plotly.newPlot("bubble", bubbleTrace, bubbleLayout);
+
+        // Bar Chart
+        var yticks = otu_ids.slice(0, 10).map(otuID => `OTU ${otuID}`).reverse();
+        var barTrace = [{
+          y: yticks,
+          x: sample_values.slice(0, 10).reverse(),
+          text: otu_labels.slice(0, 10).reverse(),
+          type: "bar",
+          orientation: "h",
+          marker: {
+            color: 'red'
+          }
+        }];
+        var barLayout = {
+          title: "Top 10 Bacteria Cultures Found",
+          margin: { t: 30, l: 150 },
+          responsive: true,  // Ensures the chart is responsive
+          paper_bgcolor: '#2c3e50',
+          plot_bgcolor: '#34495e',
+          font: { color: '#ecf0f1' }
+        };
+        Plotly.newPlot("bar", barTrace, barLayout);
+      });
+    }
+
+    window.onresize = function() {
+      Plotly.Plots.resize(document.getElementById('bar'));
+      Plotly.Plots.resize(document.getElementById('bubble'));
+    };
+
+    // Initialize with the first sample
+    init();
+  </script>
+
+</body>
+
+</html>
